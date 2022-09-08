@@ -685,7 +685,7 @@ void loadAll(std::istream& is)
 
 auto main(int argc, char const *argv[]) -> int
 {
-  const std::string token("MTAwOTExOTEzMzA0NjE0OTEyMQ.Gnmp7V.NJxg5cHfCP4rfKLnQqumRYwJNPOiPp_37EaUAI");
+  const std::string token(argv[1]);
   const dpp::snowflake application_id = 1009119133046149121;
 
   createNameParams();
