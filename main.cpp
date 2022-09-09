@@ -477,6 +477,7 @@ public:
   dpp::snowflake author;
   dpp::snowflake channel_id;
   dpp::snowflake msg_id;
+  Anketa anketa;
 
   dpp::snowflake bot_msg_id;
 
@@ -683,6 +684,8 @@ void loadAll(std::istream& is)
   }
 }
 
+std::unordered_map<dpp::snowflake, std::string> whs;
+
 auto main(int argc, char const *argv[]) -> int
 {
   const std::string token(argv[1]);
@@ -736,7 +739,7 @@ auto main(int argc, char const *argv[]) -> int
 
     AnketaStatus status = mstatus[mid];
     Member& member = members[status.author];
-    Anketa& anketa = member.anketas[member.anketas.size() - 1];
+    Anketa& anketa = status.anketa;
 
     for (auto vinfo : vaults)
     {
@@ -745,6 +748,8 @@ auto main(int argc, char const *argv[]) -> int
 
     if (type == "ins_succ")
     {
+      member.anketas.push_back (anketa);
+
       bot.message_create(dpp::message (
         channel_success, 
         "<@" + std::to_string(status.author) + "> -> " + anketa.valueof("Имя")
@@ -802,13 +807,13 @@ auto main(int argc, char const *argv[]) -> int
           if (!members.contains (msg.author.id))
           {
             Member member;
-            member.anketas = {anketa};
 
             members[msg.author.id] = member;
-          } else
-          {
-            members[msg.author.id].anketas.push_back (anketa);
           }
+          // } else
+          // {
+          //   members[msg.author.id].anketas.push_back (anketa);
+          // }
 
           dpp::embed emm;
           emm.set_title ("Анкета");
@@ -828,7 +833,8 @@ auto main(int argc, char const *argv[]) -> int
 
           std::string mid = std::to_string (msg.id);
 
-          AnketaStatus& st = mstatus[msg.id] = AnketaStatus {msg.author.id, msg.channel_id, msg.id, 0};
+          AnketaStatus& st = mstatus[msg.id] = AnketaStatus {msg.author.id, msg.channel_id, msg.id};
+          st.anketa = anketa;
 
           bot.message_create (
             dpp::message (event.command.channel_id, emm)
@@ -862,13 +868,14 @@ auto main(int argc, char const *argv[]) -> int
       {
         auto mention = std::get<dpp::snowflake>(event.get_parameter ("author"));
 
-        if (!members.contains (event.command.usr.id))
+        if (!members.contains (mention))
         {
           members[mention] = Member{};
           event.reply ("У этого парня нет анкет.");
           return;
         }
-        auto member = members[event.command.usr.id];
+        
+        auto member = members[mention];
         auto arg = std::get<int64_t>(event.get_parameter ("id"));
 
         if (member.anketas.size() <= arg)
@@ -912,7 +919,13 @@ auto main(int argc, char const *argv[]) -> int
         auto member = members[event.command.usr.id];
         Anketa anketa = member.anketas[member.currentPers];
 
-        dpp::webhook wh ("https://discord.com/api/webhooks/1010146098331000924/ycRLOkdrarl0_lM8PaNcQs4Rm5-ZY0dSzJk-Kti_wKnd6HniYxVTdulQ2pPtYdnRk_rz");
+        if (!whs.contains(event.command.channel_id))
+        {
+          event.reply("В этом канале нельзя оставлять сообщения!");
+          return;
+        }
+
+        dpp::webhook wh (whs[event.command.channel_id]);
         wh.name = anketa.valueof("Имя");
 
         if (anketa.attachments.size() != 0)
@@ -953,6 +966,13 @@ auto main(int argc, char const *argv[]) -> int
           id = &try_id;
         }
 
+        if (!members.contains (*id))
+        {
+          members[*id] = Member{};
+          event.reply ("У этого парня нет анкет.");
+          return;
+        }
+
         Member& member = members[*id];
 
         dpp::embed emm;
@@ -982,6 +1002,20 @@ auto main(int argc, char const *argv[]) -> int
 
             channel_success = std::get<dpp::snowflake>(event.get_parameter("channel"));
             event.reply ("Канал установлен.");
+          }
+        }
+      } else
+      if (event.command.get_command_name() == "whbind")
+      {
+        for (auto r : event.command.member.roles)
+        {
+          if (r == 1017431162479706132 || 
+              r == 1008078725985865830 ||
+              r == 1008080963856760914)
+          {
+
+            whs[std::get<dpp::snowflake>(event.get_parameter("channel"))] = std::get<std::string>(event.get_parameter("url"));
+            event.reply ("Канал-вебхук установлен.");
           }
         }
       } else
@@ -1329,6 +1363,15 @@ auto main(int argc, char const *argv[]) -> int
         dpp::command_option (dpp::co_channel, "channel", "Канал, куда будут высылаться принятые анкеты.", true)
       );
       bot.global_command_create(set_success);
+
+      dpp::slashcommand whbind ("whbind", "Устанавливает вебхук под канал", application_id);
+      whbind.add_option(
+        dpp::command_option (dpp::co_channel, "channel", "Канал для вебхука", true)
+      );
+      whbind.add_option(
+        dpp::command_option(dpp::co_string, "url", "Ссылка вебхука", true)
+      );
+      bot.global_command_create(whbind);
 
       dpp::slashcommand rename ("rename", "Переменовывает персонажа", application_id);
       rename.add_option (
