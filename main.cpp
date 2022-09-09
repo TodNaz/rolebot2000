@@ -636,6 +636,8 @@ auto getVaultValue(std::string& vault) -> VaultValue
 
 static std::string mainVault;
 
+std::unordered_map<dpp::snowflake, std::string> whs;
+
 auto saveAll(std::ostream& os) -> void
 {
   // TODO: here
@@ -655,6 +657,13 @@ auto saveAll(std::ostream& os) -> void
     baseSerealize (member.first, os);
     member.second.seralize (os);
   }
+
+  // baseSerealize(whs.size(), os);
+  // for (auto& member : whs)
+  // {
+  //   baseSerealize (member.first, os);
+  //   strSerealize (member)
+  // }
 }
 
 void loadAll(std::istream& is)
@@ -682,14 +691,24 @@ void loadAll(std::istream& is)
 
     members[mid] = member;
   }
+
+  // baseDerealize (&msize, is);
+  // for (decltype(msize) i = 0; i < msize; i++)
+  // {
+  //   dpp::snowflake mid;
+  //   baseDerealize (&mid, is);
+
+  //   std::string 
+
+  //   whs[mid] = member;
+  // }
 }
 
-std::unordered_map<dpp::snowflake, std::string> whs;
+const dpp::snowflake application_id = 1009119133046149121;
 
 auto main(int argc, char const *argv[]) -> int
 {
   const std::string token(argv[1]);
-  const dpp::snowflake application_id = 1009119133046149121;
 
   createNameParams();
 
