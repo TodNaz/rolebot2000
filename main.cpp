@@ -87,6 +87,74 @@ std::vector<std::string> getTokens(std::string content)
   return result;
 }
 
+const std::string bracketOperator = "[]{}()[]||__**";
+
+bool isBRSpace(std::string::value_type v, bool bg = true)
+{
+  for (std::string::size_type i = bg ? 0 : 1; i < bracketOperator.size(); i += 2)
+  {
+    if (v == bracketOperator[i])
+      return true;
+  }
+
+  return false;
+}
+
+bool isNMSpace(std::string::value_type v)
+{
+  const std::string operators = "0123456789.,;*-=\\/#$@!$%^&'+-=`";
+
+  for (auto e : operators)
+  {
+    if (v == e)
+      return true;
+  }
+
+  return false;
+}
+
+std::string cutBRSpace(std::string token)
+{
+  std::string result;
+
+  bool bg = true;
+  for (auto& e : token)
+  {
+    if (bg)
+    {
+      if (isBRSpace(e, bg))
+      {
+        bg = false;
+      } else
+      {
+        result.push_back(e);
+      }
+    } else
+    {
+      if (isBRSpace(e, bg))
+      {
+        bg = true;
+      }
+    }
+  }
+
+  return result;
+}
+
+std::string cutNMSpace(std::string token)
+{
+  std::string result;
+  for (auto& e : token)
+  {
+    if (!isNMSpace(e))
+    {
+      result.push_back(e);
+    }
+  }
+
+  return cutBRSpace(result);
+}
+
 std::string cutBGSpace(std::string token)
 {
   int bg = 0;
@@ -110,7 +178,7 @@ std::string cutBGSpace(std::string token)
     }
   }
 
-  return token.substr(bg, ed - bg + 1);
+  return cutNMSpace(token.substr(bg, ed - bg + 1));
 }
 
 bool isFamousPoint(std::string token)
@@ -704,7 +772,11 @@ void loadAll(std::istream& is)
   // }
 }
 
+// DEPLOY: 
 const dpp::snowflake application_id = 1009119133046149121;
+
+// TEST:
+//const dpp::snowflake application_id = 1018047745535254628;
 
 auto main(int argc, char const *argv[]) -> int
 {
