@@ -87,7 +87,7 @@ std::vector<std::string> getTokens(std::string content)
   return result;
 }
 
-const std::string bracketOperator = "[]{}()[]||__**";
+const std::string bracketOperator = "[]{}()[]||__**``''\"\"";
 
 bool isBRSpace(std::string::value_type v, bool bg = true)
 {
